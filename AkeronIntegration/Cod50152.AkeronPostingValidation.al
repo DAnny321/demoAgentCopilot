@@ -17,6 +17,7 @@ codeunit 50152 "Akeron Posting Validation"
     var
         StagingSalesDoc: Record "Staging Sales Documents Akeron";
         PostingNo: Code[20];
+        CodMovimento: Text[30];
     begin
         // Update staging records after successful posting
         if SalesHeader."Document Akeron" then begin
@@ -25,10 +26,12 @@ codeunit 50152 "Akeron Posting Validation"
             else if SalesCrMemoHdrNo <> '' then
                 PostingNo := SalesCrMemoHdrNo;
 
-            // Update the PostingNo field with the posted document number
-            if PostingNo <> '' then begin
+            // Update staging records using COD_MOVIMENTO_CONTABILE
+            if (PostingNo <> '') and (SalesHeader."Akeron Cod Movimento" <> '') then begin
+                CodMovimento := SalesHeader."Akeron Cod Movimento";
                 StagingSalesDoc.Reset();
-                StagingSalesDoc.SetRange(PostingNo, SalesHeader."No.");
+                StagingSalesDoc.SetRange(COD_MOVIMENTO_CONTABILE, CodMovimento);
+                StagingSalesDoc.SetRange(Status, StagingSalesDoc.Status::Elaborato);
                 if StagingSalesDoc.FindSet() then
                     repeat
                         StagingSalesDoc.PostingNo := PostingNo;

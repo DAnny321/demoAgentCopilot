@@ -6,8 +6,9 @@ codeunit 50150 "Akeron Document Controls"
         TempCodMovimento: Text[30];
         CodMovimentoList: List of [Text];
     begin
-        // Get distinct COD_MOVIMENTO_CONTABILE values
+        // Get distinct COD_MOVIMENTO_CONTABILE values for records that need validation
         StagingSalesDoc.Reset();
+        StagingSalesDoc.SetRange(Status, StagingSalesDoc.Status::"Da elaborare");
         if StagingSalesDoc.FindSet() then
             repeat
                 if not CodMovimentoList.Contains(StagingSalesDoc.COD_MOVIMENTO_CONTABILE) then

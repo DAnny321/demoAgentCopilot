@@ -12,5 +12,10 @@ tableextension 50155 "Sales Header Akeron Ext" extends "Sales Header"
             Caption = 'Document Akeron';
             DataClassification = CustomerContent;
         }
+        field(50157; "Akeron Cod Movimento"; Text[30])
+        {
+            Caption = 'Akeron Cod Movimento';
+            DataClassification = CustomerContent;
+        }
     }
 }

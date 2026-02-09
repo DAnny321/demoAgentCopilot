@@ -91,10 +91,8 @@ codeunit 50151 "Akeron Document Generation"
         SalesHeader.Validate("Payment Method Code", CodModalitaPagamento);
         SalesHeader."TotalAmountAkeron" := Importo;
         SalesHeader."Document Akeron" := true;
+        SalesHeader."Akeron Cod Movimento" := CodMovimento;
         SalesHeader.Modify(true);
-
-        // Store the document number in staging records for later tracking
-        UpdateStagingWithDocumentNo(CodMovimento, SalesHeader."No.");
 
         // Create Sales Lines
         LineNo := 10000;
@@ -162,7 +160,8 @@ codeunit 50151 "Akeron Document Generation"
             end else begin
                 // Rounding difference too large, delete document and set error
                 SalesHeader.Delete(true);
-                SetErrorForDocument(CodMovimento, 'È presente una squadratura tra l''importo del documento e il totale delle righe.');
+                SetErrorForDocument(CodMovimento, StrSubstNo('È presente una squadratura tra l''importo del documento e il totale delle righe. Importo atteso: %1, Importo calcolato: %2, Differenza: %3, Soglia: %4',
+                    SalesHeader."TotalAmountAkeron", TotalLineAmount, Abs(RoundingDifference), SalesSetup."Amount to be Rounded"));
                 exit;
             end;
         end;
@@ -235,18 +234,5 @@ codeunit 50151 "Akeron Document Generation"
         // Create new dimension set ID
         NewDimSetID := DimMgt.GetDimensionSetID(TempDimensionSetEntry);
         SalesLine."Dimension Set ID" := NewDimSetID;
-    end;
-
-    local procedure UpdateStagingWithDocumentNo(CodMovimento: Text[30]; DocumentNo: Code[20])
-    var
-        StagingSalesDoc: Record "Staging Sales Documents Akeron";
-    begin
-        StagingSalesDoc.Reset();
-        StagingSalesDoc.SetRange(COD_MOVIMENTO_CONTABILE, CodMovimento);
-        if StagingSalesDoc.FindSet() then
-            repeat
-                StagingSalesDoc.PostingNo := DocumentNo;
-                StagingSalesDoc.Modify();
-            until StagingSalesDoc.Next() = 0;
     end;
 }

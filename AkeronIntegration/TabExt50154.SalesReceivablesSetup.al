@@ -6,8 +6,8 @@ tableextension 50154 "Sales Receivables Setup Ext" extends "Sales & Receivables 
         {
             Caption = 'Container Akeron';
             DataClassification = CustomerContent;
-            // Note: Table relation would be to T70902."Containername" if it exists
-            // TableRelation = "Table 70902".Containername;
+            // TODO: Add table relation if T70902 exists in your environment
+            // TableRelation = "Your Container Table".Containername;
         }
         field(50155; "Akeron Customer Path"; Text[250])
         {
