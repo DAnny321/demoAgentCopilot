@@ -264,4 +264,47 @@ page 50153 "Staging Sales Documents Akeron"
             }
         }
     }
+
+    actions
+    {
+        area(Processing)
+        {
+            action(ValidateDocuments)
+            {
+                Caption = 'Validate Documents';
+                ApplicationArea = All;
+                Image = Approve;
+                Promoted = true;
+                PromotedCategory = Process;
+                ToolTip = 'Validate staging sales documents';
+
+                trigger OnAction()
+                var
+                    AkeronDocControls: Codeunit "Akeron Document Controls";
+                begin
+                    AkeronDocControls.ValidateStagingSalesDocuments();
+                    CurrPage.Update(false);
+                    Message('Document validation completed.');
+                end;
+            }
+            action(GenerateDocuments)
+            {
+                Caption = 'Generate Documents';
+                ApplicationArea = All;
+                Image = MakeAgreement;
+                Promoted = true;
+                PromotedCategory = Process;
+                ToolTip = 'Generate sales documents from staging records';
+
+                trigger OnAction()
+                var
+                    AkeronDocGeneration: Codeunit "Akeron Document Generation";
+                begin
+                    AkeronDocGeneration.GenerateDocuments();
+                    CurrPage.Update(false);
+                    Message('Document generation completed.');
+                end;
+            }
+        }
+    }
 }
