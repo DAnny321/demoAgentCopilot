@@ -4,7 +4,7 @@ tableextension 50100 "Customer Extension" extends Customer
     {
         field(50100; ExternalCustomerId; Code[50])
         {
-            Caption = 'External Customer Id';
+            Caption = 'External Customer ID';
             DataClassification = CustomerContent;
         }
     }
