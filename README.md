@@ -12,7 +12,7 @@ This extension adds an `ExternalCustomerId` field to the Customer table (Table 1
 #### Field Details
 - **Name**: ExternalCustomerId
 - **Type**: Code[50]
-- **Caption**: External Customer Id
+- **Caption**: External Customer ID
 - **Data Classification**: CustomerContent
 
 #### Implementation
