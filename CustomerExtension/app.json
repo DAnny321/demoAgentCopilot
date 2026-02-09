@@ -1,0 +1,28 @@
+{
+  "id": "bde454f2-35b0-4078-a5fe-49545ab6afa1",
+  "name": "CustomerExtension",
+  "publisher": "Demo Publisher",
+  "version": "1.0.0.0",
+  "brief": "Customer Extension with ExternalCustomerId field",
+  "description": "Adds ExternalCustomerId field to Customer table",
+  "privacyStatement": "",
+  "EULA": "",
+  "help": "",
+  "url": "",
+  "logo": "",
+  "dependencies": [],
+  "screenshots": [],
+  "platform": "1.0.0.0",
+  "application": "22.0.0.0",
+  "idRanges": [
+    {
+      "from": 50100,
+      "to": 50149
+    }
+  ],
+  "features": [
+    "NoImplicitWith"
+  ],
+  "runtime": "12.0",
+  "target": "OnPrem"
+}
