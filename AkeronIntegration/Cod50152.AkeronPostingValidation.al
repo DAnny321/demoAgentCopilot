@@ -8,7 +8,8 @@ codeunit 50152 "Akeron Posting Validation"
             // Validate that TotalAmountAkeron matches Amount Including VAT
             SalesHeader.CalcFields("Amount Including VAT");
             if SalesHeader."TotalAmountAkeron" <> SalesHeader."Amount Including VAT" then
-                Error('Impossibile procedere con la registrazione. È presente una squadratura nel documento.');
+                Error('Impossibile procedere con la registrazione. È presente una squadratura nel documento. Importo atteso: %1, Importo calcolato: %2, Differenza: %3',
+                    SalesHeader."TotalAmountAkeron", SalesHeader."Amount Including VAT", Abs(SalesHeader."TotalAmountAkeron" - SalesHeader."Amount Including VAT"));
         end;
     end;
 

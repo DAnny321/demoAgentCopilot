@@ -36,10 +36,12 @@ page 50153 "Staging Sales Documents Akeron"
                 field(PostingNo; Rec.PostingNo)
                 {
                     ApplicationArea = All;
+                    ToolTip = 'Specifies the posting number of the created document';
                 }
                 field(COD_MOVIMENTO_CONTABILE; Rec.COD_MOVIMENTO_CONTABILE)
                 {
                     ApplicationArea = All;
+                    ToolTip = 'Specifies the accounting movement code';
                 }
                 field(NUM_RIGA; Rec.NUM_RIGA)
                 {
