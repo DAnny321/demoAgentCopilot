@@ -23,9 +23,6 @@ codeunit 50151 "Akeron Document Generation"
     local procedure CreateSalesDocument(CodMovimento: Text[30])
     var
         StagingSalesDoc: Record "Staging Sales Documents Akeron";
-        SalesHeader: Record "Sales Header";
-        SalesLine: Record "Sales Line";
-        SalesSetup: Record "Sales & Receivables Setup";
         CodConto: Text[30];
         DareAvere: Text[1];
         DataRegistrazione: Date;
@@ -34,9 +31,6 @@ codeunit 50151 "Akeron Document Generation"
         CodValuta: Text[30];
         CodModalitaPagamento: Text[30];
         Importo: Decimal;
-        TotalLineAmount: Decimal;
-        RoundingDifference: Decimal;
-        LineNo: Integer;
     begin
         // Get header information from CLI line
         StagingSalesDoc.Reset();
@@ -55,6 +49,23 @@ codeunit 50151 "Akeron Document Generation"
         CodModalitaPagamento := StagingSalesDoc.COD_MODALITA_PAGAMENTO;
         Importo := StagingSalesDoc.IMPORTO;
 
+        // Try to create the document, catch any errors
+        if not TryCreateDocument(CodMovimento, CodConto, DareAvere, DataRegistrazione, NumeroProtocollo, DataScadenza, CodValuta, CodModalitaPagamento, Importo) then begin
+            SetErrorForDocument(CodMovimento, GetLastErrorText());
+        end;
+    end;
+
+    [TryFunction]
+    local procedure TryCreateDocument(CodMovimento: Text[30]; CodConto: Text[30]; DareAvere: Text[1]; DataRegistrazione: Date; NumeroProtocollo: Decimal; DataScadenza: Date; CodValuta: Text[30]; CodModalitaPagamento: Text[30]; Importo: Decimal)
+    var
+        StagingSalesDoc: Record "Staging Sales Documents Akeron";
+        SalesHeader: Record "Sales Header";
+        SalesLine: Record "Sales Line";
+        SalesSetup: Record "Sales & Receivables Setup";
+        TotalLineAmount: Decimal;
+        RoundingDifference: Decimal;
+        LineNo: Integer;
+    begin
         // Create Sales Header
         SalesHeader.Init();
         if DareAvere = 'D' then
@@ -82,6 +93,9 @@ codeunit 50151 "Akeron Document Generation"
         SalesHeader."Document Akeron" := true;
         SalesHeader.Modify(true);
 
+        // Store the document number in staging records for later tracking
+        UpdateStagingWithDocumentNo(CodMovimento, SalesHeader."No.");
+
         // Create Sales Lines
         LineNo := 10000;
         StagingSalesDoc.Reset();
@@ -107,14 +121,17 @@ codeunit 50151 "Akeron Document Generation"
                 else
                     SalesLine.Validate("Line Amount", -StagingSalesDoc.IMPORTO);
 
-                // Set competence dates if they exist (assuming custom fields)
-                // SalesLine.ATC_Competence Starting Date := DT2Date(StagingSalesDoc.DATA_INIZIO_COMPETENZA);
-                // SalesLine.ATC_Competence Ending Date := DT2Date(StagingSalesDoc.DATA_FINE_COMPETENZA);
+                // Set competence dates if they exist
+                if StagingSalesDoc.DATA_INIZIO_COMPETENZA <> 0DT then
+                    SalesLine."ATC Competence Starting Date" := DT2Date(StagingSalesDoc.DATA_INIZIO_COMPETENZA);
+                if StagingSalesDoc.DATA_FINE_COMPETENZA <> 0DT then
+                    SalesLine."ATC Competence Ending Date" := DT2Date(StagingSalesDoc.DATA_FINE_COMPETENZA);
 
                 SalesLine.Validate("VAT Prod. Posting Group", StagingSalesDoc.COD_IVA);
 
-                // Set dimension if configured (would need dimension management)
-                // SetLineDimension(SalesLine, StagingSalesDoc.COD_CDC);
+                // Set dimension if configured
+                if StagingSalesDoc.COD_CDC <> '' then
+                    SetLineDimension(SalesLine, StagingSalesDoc.COD_CDC);
 
                 SalesLine.Modify(true);
                 LineNo += 10000;
@@ -177,6 +194,58 @@ codeunit 50151 "Akeron Document Generation"
         if StagingSalesDoc.FindSet() then
             repeat
                 StagingSalesDoc.Status := StagingSalesDoc.Status::Elaborato;
+                StagingSalesDoc.Modify();
+            until StagingSalesDoc.Next() = 0;
+    end;
+
+    local procedure SetLineDimension(var SalesLine: Record "Sales Line"; DimensionCode: Text[30])
+    var
+        DimensionSetEntry: Record "Dimension Set Entry";
+        TempDimensionSetEntry: Record "Dimension Set Entry" temporary;
+        SalesSetup: Record "Sales & Receivables Setup";
+        DimMgt: Codeunit DimensionManagement;
+        NewDimSetID: Integer;
+    begin
+        SalesSetup.Get();
+        if SalesSetup."Dimension CDC" = '' then
+            exit;
+
+        // Get existing dimension set entries
+        DimensionSetEntry.Reset();
+        DimensionSetEntry.SetRange("Dimension Set ID", SalesLine."Dimension Set ID");
+        if DimensionSetEntry.FindSet() then
+            repeat
+                TempDimensionSetEntry := DimensionSetEntry;
+                TempDimensionSetEntry.Insert();
+            until DimensionSetEntry.Next() = 0;
+
+        // Add or update the CDC dimension
+        TempDimensionSetEntry.Reset();
+        TempDimensionSetEntry.SetRange("Dimension Code", SalesSetup."Dimension CDC");
+        if TempDimensionSetEntry.FindFirst() then begin
+            TempDimensionSetEntry."Dimension Value Code" := CopyStr(DimensionCode, 1, 20);
+            TempDimensionSetEntry.Modify();
+        end else begin
+            TempDimensionSetEntry.Init();
+            TempDimensionSetEntry."Dimension Code" := SalesSetup."Dimension CDC";
+            TempDimensionSetEntry."Dimension Value Code" := CopyStr(DimensionCode, 1, 20);
+            TempDimensionSetEntry.Insert();
+        end;
+
+        // Create new dimension set ID
+        NewDimSetID := DimMgt.GetDimensionSetID(TempDimensionSetEntry);
+        SalesLine."Dimension Set ID" := NewDimSetID;
+    end;
+
+    local procedure UpdateStagingWithDocumentNo(CodMovimento: Text[30]; DocumentNo: Code[20])
+    var
+        StagingSalesDoc: Record "Staging Sales Documents Akeron";
+    begin
+        StagingSalesDoc.Reset();
+        StagingSalesDoc.SetRange(COD_MOVIMENTO_CONTABILE, CodMovimento);
+        if StagingSalesDoc.FindSet() then
+            repeat
+                StagingSalesDoc.PostingNo := DocumentNo;
                 StagingSalesDoc.Modify();
             until StagingSalesDoc.Next() = 0;
     end;

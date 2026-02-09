@@ -25,10 +25,16 @@ codeunit 50152 "Akeron Posting Validation"
             else if SalesCrMemoHdrNo <> '' then
                 PostingNo := SalesCrMemoHdrNo;
 
+            // Update the PostingNo field with the posted document number
             if PostingNo <> '' then begin
-                // Find related staging records (this would require tracking the relationship)
-                // For now, we'll update based on document match
-                UpdateStagingRecordsAsRegistered(PostingNo);
+                StagingSalesDoc.Reset();
+                StagingSalesDoc.SetRange(PostingNo, SalesHeader."No.");
+                if StagingSalesDoc.FindSet() then
+                    repeat
+                        StagingSalesDoc.PostingNo := PostingNo;
+                        StagingSalesDoc.Status := StagingSalesDoc.Status::Registrato;
+                        StagingSalesDoc.Modify();
+                    until StagingSalesDoc.Next() = 0;
             end;
         end;
     end;
@@ -37,19 +43,5 @@ codeunit 50152 "Akeron Posting Validation"
     local procedure OnPostSalesDocOnBeforeRunGenJnlPostLine(var GenJnlLine: Record "Gen. Journal Line"; var SalesHeader: Record "Sales Header"; var GenJnlPostLine: Codeunit "Gen. Jnl.-Post Line"; PreviewMode: Boolean; CommitIsSupressed: Boolean; var IsHandled: Boolean; var Window: Dialog; var HideProgressWindow: Boolean)
     begin
         // Additional validation before posting could go here if needed
-    end;
-
-    local procedure UpdateStagingRecordsAsRegistered(PostingNo: Code[20])
-    var
-        StagingSalesDoc: Record "Staging Sales Documents Akeron";
-    begin
-        StagingSalesDoc.Reset();
-        StagingSalesDoc.SetRange(PostingNo, PostingNo);
-        StagingSalesDoc.SetRange(Status, StagingSalesDoc.Status::Elaborato);
-        if StagingSalesDoc.FindSet() then
-            repeat
-                StagingSalesDoc.Status := StagingSalesDoc.Status::Registrato;
-                StagingSalesDoc.Modify();
-            until StagingSalesDoc.Next() = 0;
     end;
 }
